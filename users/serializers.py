@@ -50,7 +50,7 @@ class UserCreateSerializer(serializers.ModelSerializer):
     
 
 class VerifyOtpSerializer(serializers.ModelSerializer):
-    otp=serializers.CharField(max_length=6)
+    otp=serializers.CharField(required=True)
     email=serializers.EmailField(max_length=100)
 
     def is_valid_email(self, email):
@@ -74,3 +74,10 @@ class VerifyOtpSerializer(serializers.ModelSerializer):
         model=User
         fields=['email', 'otp']
         
+
+class RegeenrateOtpSerializer(serializers.ModelSerializer):
+    email=serializers.EmailField(max_length=100)
+
+    class Meta:
+        model=User
+        fields=['email']
