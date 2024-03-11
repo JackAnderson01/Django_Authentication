@@ -81,3 +81,11 @@ class RegeenrateOtpSerializer(serializers.ModelSerializer):
     class Meta:
         model=User
         fields=['email']
+
+
+class ForgotPasswordSerializer(serializers.ModelSerializer):
+    email=serializers.EmailField(max_length=100)
+
+    class Meta:
+        model=User
+        fields=['email']

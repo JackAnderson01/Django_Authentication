@@ -119,7 +119,7 @@ class VerifyOtpView(generics.CreateAPIView):
                     # Checking if all the conditions for otp verification has met.
                     if(user.otp == serializer.validated_data.get('otp') and user.otp_expiry and timezone.now() < user.otp_expiry
                     ):
-                        non_verified_user.update(is_verified=True, otp_expiry=None, max_otp_try=settings.MAX_OTP_TRY, otp_max_out=None)
+                        non_verified_user.update(is_active=True, is_verified=True, otp_expiry=None, max_otp_try=settings.MAX_OTP_TRY, otp_max_out=None)
                         return Response(data={"message": f"User Successfully Verified."}, status=status.HTTP_200_OK)
                 
             
@@ -128,7 +128,7 @@ class VerifyOtpView(generics.CreateAPIView):
         # Functionality if user has provided data in incorrect format.
         return Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         
-class RegenrateOtpView(generics.CreateAPIView):
+class RegenerateOtpView(generics.CreateAPIView):
     serializer_class=serializers.RegeenrateOtpSerializer
 
     def post(self, request):
@@ -145,7 +145,7 @@ class RegenrateOtpView(generics.CreateAPIView):
 
                 if int(user.max_otp_try) == 0 and timezone.now() < user.otp_max_out:
                     return Response(
-                    "You've reached otp try limit. Please try again after an hour",
+                    f"You've reached otp try limit. Please try again after {user.otp_max_out.strftime('%H:%M:%S')}",
                     status=status.HTTP_400_BAD_REQUEST
                     )
         
@@ -169,8 +169,28 @@ class RegenrateOtpView(generics.CreateAPIView):
                     non_verified_user.update(otp_max_out = None)
                     non_verified_user.update(max_otp_try = max_otp_try)
                 
+                sendOtp(otp, user.email, user.name)
                 return Response("Otp Successfully regenerated", status=status.HTTP_200_OK)
             
             else:
                 return Response("No user associated with this email", status=status.HTTP_400_BAD_REQUEST)
-                
+
+class ForgotPasswordView(generics.CreateAPIView):
+    serializer_class = serializers.ForgotPasswordSerializer
+
+    def post(self, request):
+        data = request.data
+
+        serializer = self.serializer_class(data=data)
+        if serializer.is_valid():
+            forgot_user = User.objects.filter(email=serializer.validated_data.get("email"))
+            if(forgot_user.exists()):
+                user = forgot_user.first()
+                otp = random.randint(100000, 999999)
+                otp_expiry = datetime.now() + timedelta(minutes=10)
+                forgot_user.update(otp=otp, otp_expiry=otp_expiry)
+                sendOtp(otp, user.email, user.name)
+                return Response(data={"message": f"Otp sent to {user.email}"}, status=status.HTTP_200_OK)
+            
+            return Response(data={"message": "Email not yet registered."}, status=status.HTTP_400_BAD_REQUEST)
+            # need to work on change pass email being sent upon hitting the forgot pass api rightnow.

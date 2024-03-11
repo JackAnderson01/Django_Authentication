@@ -31,7 +31,8 @@ LOCAL_APPS = [
 ]
 
 LIBRARIES = [
-    'rest_framework'
+    'rest_framework',
+    'rest_framework_simplejwt'
 ]
 
 INSTALLED_APPS += LOCAL_APPS
@@ -129,7 +130,10 @@ MAX_OTP_TRY = 3
 
 # Rest Framework:
 REST_FRAMEWORK = {
-    'NON_FIELD_ERRORS_KEY': 'error'
+    'NON_FIELD_ERRORS_KEY': 'error',
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
 }
 
 
