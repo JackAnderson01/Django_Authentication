@@ -13,13 +13,37 @@ from django.conf import settings
 from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
 from django.conf import settings
 from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
+from django.utils.decorators import method_decorator
+from django_ratelimit.decorators import ratelimit
+from django.http import HttpResponse
 
 
 # Create your views here.
+
+# Throttle limit exceeded view:
+def ratelimit_none(self, request):
+    # Your HTML content
+    html_content = """
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Custom HTML</title>
+    </head>
+    <body>
+        <h1>Error!</h1>
+        <p>Too many requests try again after an hour</p>
+    </body>
+    </html>
+    """
+    return HttpResponse(html_content, content_type="text/html", status=429)
+
+
+@method_decorator(ratelimit(key='user', rate='10/hour', method='GET', block=True), name='dispatch')
 class HomeView(generics.GenericAPIView):
     def get(self, request):
         return Response(data={"message": "You're welcome"}, status=status.HTTP_200_OK)
 
+@method_decorator(ratelimit(key='user', rate='5/hour', method='GET', block=True), name='dispatch')
 class UserCreateView(generics.CreateAPIView):
     serializer_class = serializers.UserCreateSerializer
     permission_classes = [AllowAny]
@@ -65,7 +89,8 @@ class UserCreateView(generics.CreateAPIView):
                 return Response(data={"error":f"{e}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         return Response(data={"error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
-            
+
+@method_decorator(ratelimit(key='user', rate='5/hour', method='GET', block=True), name='dispatch')
 class VerifyOtpView(generics.CreateAPIView):
     serializer_class = serializers.VerifyOtpSerializer
 
@@ -112,6 +137,7 @@ class VerifyOtpView(generics.CreateAPIView):
         # Functionality if user has provided data in incorrect format.
         return Response(data={"error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
         
+@method_decorator(ratelimit(key='user', rate='5/hour', method='GET', block=True), name='dispatch')
 class RegenerateOtpView(generics.CreateAPIView):
     serializer_class=serializers.RegenerateOtpSerializer
 
@@ -158,7 +184,8 @@ class RegenerateOtpView(generics.CreateAPIView):
                 return Response(data={"error": "No user associated with this email"}, status=status.HTTP_400_BAD_REQUEST)
 
         return Response(data={"error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
-        
+
+@method_decorator(ratelimit(key='user', rate='5/hour', method='GET', block=True), name='dispatch')
 class ForgotPasswordView(generics.CreateAPIView):
     serializer_class = serializers.ForgotPasswordSerializer
 
@@ -180,7 +207,8 @@ class ForgotPasswordView(generics.CreateAPIView):
             # need to work on change pass email being sent upon hitting the forgot pass api rightnow.
         
         return Response(data={"error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
-      
+
+@method_decorator(ratelimit(key='user', rate='5/hour', method='GET', block=True), name='dispatch')
 class VerifyForgotOtpView(generics.CreateAPIView):
     serializer_class = serializers.VerifyForgotOtpSerializer
 
@@ -223,6 +251,7 @@ class VerifyForgotOtpView(generics.CreateAPIView):
         # Functionality if user has provided data in incorrect format.
         return Response(data={"error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
+@method_decorator(ratelimit(key='user', rate='5/hour', method='GET', block=True), name='dispatch')
 class LogoutView(generics.CreateAPIView):
     def post(self, request):
         try:
@@ -233,6 +262,7 @@ class LogoutView(generics.CreateAPIView):
         except Exception as e:
                 return Response(data={"error": f"{e}"}, status=status.HTTP_400_BAD_REQUEST)
 
+@method_decorator(ratelimit(key='user', rate='30/hour', method='GET', block=True), name='dispatch')
 class ValidateTokenView(generics.CreateAPIView):
     serializer_class = serializers.ValidateTokenSerializer
 
@@ -252,6 +282,7 @@ class ValidateTokenView(generics.CreateAPIView):
         
         return Response(data={"error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
+@method_decorator(ratelimit(key='user', rate='2/hour', method='GET', block=True), name='dispatch')
 class ChangePasswordView(generics.CreateAPIView):
     serializer_class = serializers.ChangePasswordSerializer
 
@@ -288,3 +319,4 @@ class ChangePasswordView(generics.CreateAPIView):
             
         # Functionality if user has provided data in incorrect format.
         return Response(data={"error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
