@@ -159,3 +159,14 @@ class ChangePasswordSerializer(serializers.ModelSerializer):
         
         return super().validate(data)
     
+class LogoutSerializer(serializers.ModelSerializer):
+    token=serializers.CharField(required=True)
+
+    class Meta:
+        model = User
+        fields=['token']
+    
+    def validate(self, attrs):
+        if (attrs['token'] == "" or attrs['token'] == None):
+            raise serializers.ValidationError("Token is required.")
+        return super().validate(attrs)
