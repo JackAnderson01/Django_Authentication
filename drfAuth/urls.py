@@ -19,6 +19,6 @@ urlpatterns = [
         version='1.0.0'
     ), name="api_schema"),
     path("auth/", include('users.urls')),
-    path('auth/login', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    # path('auth/login', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('auth/token/refresh', TokenRefreshView.as_view(), name='token_refresh'),
 ]

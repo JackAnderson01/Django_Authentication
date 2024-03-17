@@ -16,6 +16,8 @@ from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 from django.utils.decorators import method_decorator
 from django_ratelimit.decorators import ratelimit
 from django.http import HttpResponse
+from django.contrib.auth import authenticate
+from rest_framework_simplejwt.tokens import RefreshToken
 
 
 # Create your views here.
@@ -43,7 +45,7 @@ class HomeView(generics.GenericAPIView):
     def get(self, request):
         return Response(data={"message": "You're welcome"}, status=status.HTTP_200_OK)
 
-@method_decorator(ratelimit(key='user', rate='5/hour', method='POST', block=True), name='dispatch')
+@method_decorator(ratelimit(key='user', rate='3/hour', method='POST', block=True), name='dispatch')
 class UserCreateView(generics.CreateAPIView):
     serializer_class = serializers.UserCreateSerializer
     permission_classes = [AllowAny]
@@ -250,6 +252,34 @@ class VerifyForgotOtpView(generics.CreateAPIView):
             
         # Functionality if user has provided data in incorrect format.
         return Response(data={"error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+@method_decorator(ratelimit(key='user', rate='10/hour', method='POST', block=True), name='dispatch')
+class LoginView(generics.CreateAPIView):
+    serializer_class = serializers.LoginSerializer
+
+    def post(self, request):
+        data = request.data
+
+        serializer = self.serializer_class(data=data)
+
+        if serializer.is_valid():
+            user = User.objects.filter(email=serializer.validated_data.get('email'))
+            if(user.exists()):
+                user = authenticate(request=request, email=serializer.validated_data.get('email'), password=serializer.validated_data.get('password'))
+                if(user):
+                    refresh = RefreshToken.for_user(user)
+
+                    data = {
+                        'refresh': str(refresh),
+                        'access': str(refresh.access_token)
+                    }
+                    return Response(data=data, status=status.HTTP_200_OK)
+
+                return Response(data={"message": "Invalid Credentials provided."}, status=status.HTTP_200_OK)
+            
+            return Response(data={"message": "User doesn't exist."}, status=status.HTTP_200_OK)
+        
+        return Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @method_decorator(ratelimit(key='user', rate='8/hour', method='POST', block=True), name='dispatch')
 class LogoutView(generics.CreateAPIView):
